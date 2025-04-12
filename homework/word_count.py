@@ -56,6 +56,10 @@ def load_input(input_directory):
 #
 def line_preprocessing(sequence):
     """Line Preprocessing"""
+    return [
+        (filename, line.translate(str.maketrans("", "", string.punctuation)).lower())
+        for filename, line in sequence
+    ]
 
 
 #
