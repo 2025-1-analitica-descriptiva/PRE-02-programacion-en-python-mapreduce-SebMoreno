@@ -3,10 +3,10 @@
 # pylint: disable=broad-exception-raised
 
 import fileinput
-import glob
 import os.path
+import string
 import time
-from itertools import groupby
+from glob import glob
 
 
 #
@@ -19,6 +19,13 @@ from itertools import groupby
 #
 def copy_raw_files_to_input_folder(n):
     """Funcion copy_files"""
+    os.makedirs("files/input", exist_ok=True)
+    for file in glob("files/raw/*"):
+        for i in range(n):
+            with open(file, "r", encoding="utf-8") as f:
+                with open(f"files/input/{os.path.basename(file).split('.')[0]}_{i + 1}.txt", "w",
+                          encoding="utf-8") as f2:
+                    f2.write(f.read())
 
 
 #
