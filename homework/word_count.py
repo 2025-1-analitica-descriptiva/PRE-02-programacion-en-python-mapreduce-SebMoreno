@@ -95,7 +95,7 @@ def mapper(sequence):
 #
 def shuffle_and_sort(sequence):
     """Shuffle and Sort"""
-
+    return sorted(sequence, key=lambda x: x[0])
 
 #
 # Escriba la función reducer, la cual recibe el resultado de shuffle_and_sort y
