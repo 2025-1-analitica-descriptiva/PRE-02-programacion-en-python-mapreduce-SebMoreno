@@ -45,6 +45,8 @@ def copy_raw_files_to_input_folder(n):
 #
 def load_input(input_directory):
     """Funcion load_input"""
+    with fileinput.input(files=glob(f"{input_directory}/*")) as f:
+        return [(fileinput.filename(), line) for line in f]
 
 
 #
