@@ -3,11 +3,11 @@
 # pylint: disable=broad-exception-raised
 
 import fileinput
+import glob
 import os.path
-import string
 import time
-from glob import glob
-
+from itertools import groupby
+import string
 
 #
 # Escriba la funcion que  genere n copias de los archivos de texto en la
@@ -19,12 +19,17 @@ from glob import glob
 #
 def copy_raw_files_to_input_folder(n):
     """Funcion copy_files"""
-    os.makedirs("files/input", exist_ok=True)
-    for file in glob("files/raw/*"):
-        for i in range(n):
+
+    if not os.path.exists("files/input"):
+        os.makedirs("files/input")
+    for file in glob.glob("files/raw/*"):
+        for i in range(1, n + 1):
             with open(file, "r", encoding="utf-8") as f:
-                with open(f"files/input/{os.path.basename(file).split('.')[0]}_{i + 1}.txt", "w",
-                          encoding="utf-8") as f2:
+                with open(
+                    f"files/input/{os.path.basename(file).split('.')[0]}_{i}.txt",
+                    "w",
+                    encoding="utf-8",
+                ) as f2:
                     f2.write(f.read())
 
 
@@ -45,9 +50,15 @@ def copy_raw_files_to_input_folder(n):
 #
 def load_input(input_directory):
     """Funcion load_input"""
-    with fileinput.input(files=glob(f"{input_directory}/*")) as f:
-        return [(fileinput.filename(), line) for line in f]
 
+    sequence = []
+    files = glob.glob(f"{input_directory}/*")
+    with fileinput.input(files=files) as f:
+        for line in f:
+            sequence.append(
+                (fileinput.filename(), line)
+                )
+    return sequence
 
 #
 # Escriba la función line_preprocessing que recibe una lista de tuplas de la
@@ -56,10 +67,11 @@ def load_input(input_directory):
 #
 def line_preprocessing(sequence):
     """Line Preprocessing"""
-    return [
-        (filename, line.translate(str.maketrans("", "", string.punctuation)).lower())
-        for filename, line in sequence
+    sequence = [
+        (key, value.translate(str.maketrans("", "", string.punctuation)).lower())
+        for key, value in sequence
     ]
+    return sequence
 
 
 #
@@ -76,11 +88,8 @@ def line_preprocessing(sequence):
 #
 def mapper(sequence):
     """Mapper"""
-    return [
-        (word, 1)
-        for _, line in sequence
-        for word in line.split()
-    ]
+    return [(word, 1) for _, value in sequence for word in value.split()]
+
 
 #
 # Escriba la función shuffle_and_sort que recibe la lista de tuplas entregada
@@ -105,6 +114,10 @@ def shuffle_and_sort(sequence):
 #
 def reducer(sequence):
     """Reducer"""
+    result = []
+    for key, group in groupby(sequence, lambda x: x[0]):
+        result.append((key, sum(value for _, value in group)))
+    return result
 
 
 #
@@ -114,6 +127,11 @@ def reducer(sequence):
 def create_ouptput_directory(output_directory):
     """Create Output Directory"""
 
+    if os.path.exists(output_directory):
+        for file in glob.glob(f"{output_directory}/*"):
+            os.remove(file)
+        os.rmdir(output_directory)
+    os.makedirs(output_directory)
 
 #
 # Escriba la función save_output, la cual almacena en un archivo de texto
@@ -125,6 +143,9 @@ def create_ouptput_directory(output_directory):
 #
 def save_output(output_directory, sequence):
     """Save Output"""
+    with open(f"{output_directory}/part-00000", "w", encoding="utf-8") as f:
+        for key, value in sequence:
+            f.write(f"{key}\t{value}\n")
 
 
 #
@@ -133,6 +154,8 @@ def save_output(output_directory, sequence):
 #
 def create_marker(output_directory):
     """Create Marker"""
+    with open(f"{output_directory}/_SUCCESS", "w", encoding="utf-8") as f:
+        f.write("")
 
 
 #
@@ -144,13 +167,13 @@ def run_job(input_directory, output_directory):
     sequence = line_preprocessing(sequence)
     sequence = mapper(sequence)
     sequence = shuffle_and_sort(sequence)
-
-    from pprint import pprint
-    pprint(sequence)
+    sequence = reducer(sequence)
+    create_ouptput_directory(output_directory)
+    save_output(output_directory, sequence)
+    create_marker(output_directory)
 
 
 if __name__ == "__main__":
-
     copy_raw_files_to_input_folder(n=1000)
 
     start_time = time.time()
